@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 
 import { useRouter } from "next/navigation";
 import { bdDivisions, bdDistricts, bdGeoTree, bdOfficeRoster, bdUpazilas } from "../bd-geo";
 import { fromBn, toBn } from "../bn-utils";
-import { defaultWaitingList, getWaitingListServerSnapshot, getWaitingListSnapshot, publishWaitingList, subscribeWaitingList } from "../waiting-store";
+import { getWaitingListServerSnapshot, getWaitingListSnapshot, publishWaitingList, subscribeWaitingList, type WaitingEntry } from "../waiting-store";
 import { describeTrialEntry, EMPTY_TRIAL_SCOPE, getTrialScopeServerSnapshot, getTrialScopeSnapshot, getTrialServerSnapshot, getTrialSnapshot, publishTrialResults, saveTrialScope, subscribeTrialResults, subscribeTrialScope, type TrialScope } from "../trial-store";
 import { getWebrtcLinkServerSnapshot, getWebrtcLinkSnapshot, publishWebrtcLink, subscribeWebrtcLink } from "../webrtc-store";
 import { deleteNote, getNotesServerSnapshot, getNotesSnapshot, publishNote, subscribeNotes } from "../note-store";
@@ -223,20 +223,63 @@ function PlaceField({ type, place, onChange }: { type: string; place: string; on
   </select>;
 }
 
+type QueueRow = WaitingEntry & { key: number };
+let nextQueueKey = 0;
+// Rows need their own identity: two rows can share the same office type and place
+const toQueueRow = (entry: WaitingEntry): QueueRow => ({ ...entry, key: ++nextQueueKey });
+// Earliest time first; rows without a time go last; equal times keep their current order
+const sortByTime = (rows: QueueRow[]) => [...rows].sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
+
 function WaitingManager({ onNotify }: { onNotify: (message: string) => void }) {
-  const [items, setItems] = useState(defaultWaitingList.map((entry): string[] => [entry.type, entry.place, entry.time]));
+  const saved = useSyncExternalStore(subscribeWaitingList, getWaitingListSnapshot, getWaitingListServerSnapshot);
+  const savedRows = useMemo(() => saved.map(toQueueRow), [saved]);
+  // Local edits until published; until then the list shows what is saved in MongoDB
+  const [draft, setDraft] = useState<QueueRow[] | null>(null);
+  const items = draft ?? savedRows;
   const [adding, setAdding] = useState(false);
   const [newPlace, setNewPlace] = useState("");
   const [newType, setNewType] = useState("নির্ধারিত অফিস");
   const [newTime, setNewTime] = useState("");
-  const move = (index: number, direction: -1 | 1) => { const next = index + direction; if (next < 0 || next >= items.length) return; const copy = [...items]; [copy[index], copy[next]] = [copy[next], copy[index]]; setItems(copy); };
+
+  const updateRow = (key: number, change: Partial<WaitingEntry>) => setDraft(items.map((item) => item.key === key ? { ...item, ...change } : item));
+  const move = (index: number, direction: -1 | 1) => {
+    const next = index + direction;
+    if (next < 0 || next >= items.length) return;
+    const copy = [...items];
+    [copy[index], copy[next]] = [copy[next], copy[index]];
+    setDraft(copy);
+  };
+  // Re-sort once a time is set (on leaving the field, so rows don't jump while typing)
+  const applyTimeOrder = () => {
+    const sorted = sortByTime(items);
+    if (sorted.some((row, index) => row.key !== items[index].key)) { setDraft(sorted); onNotify("সময় অনুযায়ী ক্রম হালনাগাদ হয়েছে"); }
+  };
   const addItem = () => {
-    if (!newPlace.trim() || !newTime) return;
-    setItems([...items, [newType, newPlace.trim(), newTime]]);
-    onNotify("অপেক্ষমাণ তালিকায় প্রান্ত যোগ হয়েছে");
+    if (!newPlace.trim() || !newTime) { onNotify("স্থান ও সময় নির্বাচন করুন"); return; }
+    setDraft(sortByTime([...items, toQueueRow({ type: newType, place: newPlace.trim(), time: newTime })]));
+    onNotify("অপেক্ষমাণ তালিকায় প্রান্ত যোগ হয়েছে — সময় অনুযায়ী ক্রম নির্ধারিত");
     setNewPlace(""); setNewType("নির্ধারিত অফিস"); setNewTime(""); setAdding(false);
   };
-  return <section className="full-section waiting-manager"><div className="panel"><div className="directory-tools"><div><span className="eyebrow">ADMIN QUEUE</span><h3>অপেক্ষমাণ তালিকা পরিচালনা</h3><small className="report-subtitle">Public event page-এ প্রকাশের আগে serial ও office type ঠিক করুন</small></div><button className="primary small" onClick={() => setAdding(true)}>+ প্রান্ত যোগ করুন</button></div><div className="waiting-admin-head"><span>ক্রম</span><span>অফিসের ধরন</span><span>স্থান</span><span>সময়</span><span>অ্যাকশন</span></div>{adding && <div className="waiting-admin-row waiting-admin-new"><b>নতুন</b><select value={newType} onChange={(event) => { setNewType(event.target.value); setNewPlace(""); }}>{officeTypes.map((type) => <option key={type}>{type}</option>)}</select><PlaceField type={newType} place={newPlace} onChange={setNewPlace} /><input type="time" value={newTime} onChange={(event) => setNewTime(event.target.value)} /><div><button className="queue-action" onClick={addItem}>যোগ করুন</button><button className="queue-action remove" onClick={() => { setAdding(false); setNewPlace(""); }}>বাতিল</button></div></div>}{items.map(([type, place, time], index) => <div className="waiting-admin-row" key={`${type}-${place}`}><b>{String(index + 1).padStart(2, "0")}</b><select value={type} onChange={(event) => setItems(items.map((item, itemIndex) => itemIndex === index ? [event.target.value, "", time] : item))}>{officeTypes.map((officeType) => <option key={officeType}>{officeType}</option>)}</select><PlaceField type={type} place={place} onChange={(value) => setItems(items.map((item, itemIndex) => itemIndex === index ? [type, value, time] : item))} /><input type="time" value={time} onChange={(event) => setItems(items.map((item, itemIndex) => itemIndex === index ? [type, place, event.target.value] : item))} /><div><button className="queue-action" onClick={() => move(index, -1)}>↑</button><button className="queue-action" onClick={() => move(index, 1)}>↓</button><button className="queue-action remove" onClick={() => setItems(items.filter((_, itemIndex) => itemIndex !== index))}>×</button></div></div>)}<button className="secondary publish-queue" onClick={() => { publishWaitingList(items.map(([type, place, time]) => ({ type, place, time }))); onNotify(`${items.length}টি অপেক্ষমাণ প্রান্ত public board-এ প্রকাশিত হয়েছে`); }}>অপেক্ষমাণ তালিকা প্রকাশ করুন ↗</button></div></section>;
+  const publish = () => {
+    publishWaitingList(items.map(({ type, place, time }) => ({ type, place, time })));
+    setDraft(null);
+    onNotify(`${toBn(items.length)}টি অপেক্ষমাণ প্রান্ত public board-এ প্রকাশিত হয়েছে`);
+  };
+
+  return <section className="full-section waiting-manager"><div className="panel">
+    <div className="directory-tools"><div><span className="eyebrow">ADMIN QUEUE</span><h3>অপেক্ষমাণ তালিকা পরিচালনা</h3><small className="report-subtitle">সময় দিলে ক্রম স্বয়ংক্রিয়ভাবে সাজানো হয় · প্রয়োজনে ↑ ↓ দিয়ে ক্রম বদলান</small></div><button className="secondary small" onClick={applyTimeOrder} disabled={items.length < 2}>⇅ সময় অনুযায়ী সাজান</button><button className="primary small" onClick={() => setAdding(true)}>+ প্রান্ত যোগ করুন</button></div>
+    <div className="waiting-admin-head"><span>ক্রম</span><span>অফিসের ধরন</span><span>স্থান</span><span>সময়</span><span>অ্যাকশন</span></div>
+    {adding && <div className="waiting-admin-row waiting-admin-new"><b>নতুন</b><select value={newType} onChange={(event) => { setNewType(event.target.value); setNewPlace(""); }}>{officeTypes.map((type) => <option key={type}>{type}</option>)}</select><PlaceField type={newType} place={newPlace} onChange={setNewPlace} /><input type="time" value={newTime} onChange={(event) => setNewTime(event.target.value)} /><div><button className="queue-action" onClick={addItem}>যোগ করুন</button><button className="queue-action remove" onClick={() => { setAdding(false); setNewPlace(""); }}>বাতিল</button></div></div>}
+    {items.length === 0 && !adding && <p className="empty-state">অপেক্ষমাণ তালিকায় কোনো প্রান্ত নেই।</p>}
+    {items.map((item, index) => <div className="waiting-admin-row" key={item.key}>
+      <b>{toBn(String(index + 1).padStart(2, "0"))}</b>
+      <select value={item.type} onChange={(event) => updateRow(item.key, { type: event.target.value, place: "" })}>{officeTypes.map((officeType) => <option key={officeType}>{officeType}</option>)}</select>
+      <PlaceField type={item.type} place={item.place} onChange={(value) => updateRow(item.key, { place: value })} />
+      <input type="time" value={item.time} onChange={(event) => updateRow(item.key, { time: event.target.value })} onBlur={applyTimeOrder} />
+      <div><button className="queue-action" onClick={() => move(index, -1)} disabled={index === 0} aria-label="উপরে সরান">↑</button><button className="queue-action" onClick={() => move(index, 1)} disabled={index === items.length - 1} aria-label="নিচে সরান">↓</button><button className="queue-action remove" onClick={() => setDraft(items.filter((other) => other.key !== item.key))} aria-label="মুছুন">×</button></div>
+    </div>)}
+    <div className="waiting-publish-row"><button className="secondary publish-queue" onClick={publish}>অপেক্ষমাণ তালিকা প্রকাশ করুন ↗</button>{draft && <span className="publish-state unsaved">○ অপ্রকাশিত পরিবর্তন আছে</span>}</div>
+  </div></section>;
 }
 
 type TrialEntry = { id: number; division: string; district: string; upazila: string; type: string; name: string; 0: string; 1: string; 2: string; 3: string; audio: string; video: string; note: string };
