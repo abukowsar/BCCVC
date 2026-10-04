@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>সরকারি ভিডিও কনফারেন্সিং প্রজেক্ট | বিসিসি, আইসিটি বিভাগ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Tiro+Bangla:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* office zone */
+  --cream:#F7F1E3;
+  --cream-deep:#EFE6D2;
+  --ink:#16211F;
+  --bottle:#0A5C43;
+  --bottle-dim:#0E7454;
+  --gold:#B98A2F;
+  --flag:#C1272D;
+  /* control-room board zone */
+  --board:#0B1E2D;
+  --board-2:#10293C;
+  --board-3:#16374E;
+  --rule:#1E4661;
+  --signal:#2FD2C0;
+  --signal-dim:#1B8F84;
+  --board-ink:#DCE9F0;
+  --board-mute:#7E9CB0;
+  --lamp-live:#F2B23E;
+  --lamp-done:#3FBF8F;
+  --lamp-wait:#4F7794;
+  --lamp-issue:#E4594F;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--cream);color:var(--ink);
+  font-family:'Hind Siliguri',system-ui,sans-serif;
+  font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{margin:0;line-height:1.25;font-weight:600}
+p{margin:0 0 .8em}
+a{color:var(--bottle);text-decoration-thickness:1px;text-underline-offset:3px}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:3px}
+button{font-family:inherit}
+
+/* ---------- government strip ---------- */
+.gov{background:var(--bottle);color:#EAF3EF;font-size:13.5px}
+.gov .wrap{display:flex;gap:16px;align-items:center;justify-content:space-between;padding-top:7px;padding-bottom:7px;flex-wrap:wrap}
+.gov-chain{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gov-chain span:not(:last-child)::after{content:'›';margin-left:10px;color:#8FC0AE}
+.gov-right{display:flex;gap:14px;align-items:center;font-size:12.5px;color:#CFE6DC}
+
+/* ---------- masthead ---------- */
+.mast{background:#fff;border-bottom:1px solid var(--cream-deep)}
+.mast .wrap{display:flex;gap:18px;align-items:center;justify-content:space-between;padding-top:14px;padding-bottom:14px;flex-wrap:wrap}
+.brand{display:flex;gap:14px;align-items:center}
+.sigil{width:54px;height:54px;flex:0 0 54px;border-radius:50%;background:
+   radial-gradient(circle at 35% 30%, #1B4C6B 0%, #0B1E2D 70%);
+   display:grid;place-items:center;border:2px solid var(--bottle)}
+.sigil svg{width:30px;height:30px}
+.brand h1{font-family:'Tiro Bangla',serif;font-size:22px;font-weight:400;letter-spacing:-.2px}
+.brand .sub{font-size:13px;color:#5A6B66;line-height:1.35}
+nav.mainnav{display:flex;gap:4px;flex-wrap:wrap}
+nav.mainnav a{padding:7px 12px;border-radius:4px;font-size:14.5px;color:#2C3B37;text-decoration:none}
+nav.mainnav a:hover{background:var(--cream-deep)}
+nav.mainnav a.now{background:var(--bottle);color:#fff}
+
+/* ---------- BOARD ZONE ---------- */
+.board{background:var(--board);color:var(--board-ink);padding:26px 0 34px;
+  background-image:
+    linear-gradient(180deg,rgba(47,210,192,.07),transparent 260px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.022) 0 1px,transparent 1px 64px);
+}
+.board-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+.board-head h2{font-family:'Tiro Bangla',serif;font-weight:400;font-size:27px;color:#fff}
+.board-head p{color:var(--board-mute);font-size:14px;margin:4px 0 0;max-width:62ch}
+.sess{font-size:12.5px;color:var(--board-mute);text-align:right}
+.sess b{display:block;color:var(--signal);font-size:15px;letter-spacing:.5px}
+
+.live-grid{display:grid;grid-template-columns:1.45fr 1fr;gap:16px;margin-bottom:18px}
+@media(max-width:860px){.live-grid{grid-template-columns:1fr}}
+
+.nowcard{background:linear-gradient(140deg,var(--board-2),var(--board-3));border:1px solid var(--rule);
+  border-left:5px solid var(--lamp-live);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden}
+.nowcard .tagline{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--lamp-live);margin-bottom:6px}
+.pulse{width:10px;height:10px;border-radius:50%;background:var(--lamp-live);box-shadow:0 0 0 0 rgba(242,178,62,.65);animation:pulse 1.8s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 12px rgba(242,178,62,0)}100%{box-shadow:0 0 0 0 rgba(242,178,62,0)}}
+.nowcard h3{font-size:26px;color:#fff;font-weight:600;margin-bottom:2px}
+.nowcard .place{color:var(--board-mute);font-size:14.5px}
+.nowmeta{display:flex;gap:26px;margin-top:14px;flex-wrap:wrap}
+.nowmeta div span{display:block;font-size:11.5px;color:var(--board-mute)}
+.nowmeta div b{font-size:19px;color:var(--signal);font-weight:500}
+.nowcard .idle{color:var(--board-mute);font-size:15px;padding:8px 0}
+
+.nextcard{background:rgba(255,255,255,.035);border:1px solid var(--rule);border-radius:10px;padding:16px 18px}
+.nextcard h4{font-size:13px;color:var(--board-mute);font-weight:500;margin-bottom:10px}
+.nextlist{list-style:none;margin:0;padding:0}
+.nextlist li{display:flex;gap:11px;align-items:baseline;padding:7px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:14.5px}
+.nextlist li:last-child{border-bottom:0}
+.nextlist .sn{color:var(--signal);font-size:12.5px;min-width:34px}
+.nextlist .tm{margin-left:auto;color:var(--board-mute);font-size:12.5px}
+.nextlist .empty{color:var(--board-mute);font-size:14px;padding:6px 0}
+
+/* progress rail */
+.rail{margin:4px 0 16px}
+.rail-ticks{display:flex;gap:3px;height:16px;align-items:stretch}
+.rail-ticks i{flex:1;border-radius:2px;background:rgba(255,255,255,.09);transition:background .3s}
+.rail-ticks i.done{background:var(--lamp-done)}
+.rail-ticks i.live{background:var(--lamp-live)}
+.rail-ticks i.issue{background:var(--lamp-issue)}
+.rail-legend{display:flex;gap:22px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--board-mute)}
+.rail-legend b{color:#fff;font-weight:600;font-size:16px;margin-right:5px}
+
+/* controls */
+.ctrls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.search{flex:1 1 230px;min-width:190px;position:relative}
+.search input{width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--rule);
+  background:rgba(0,0,0,.22);color:#fff;font-family:inherit;font-size:14.5px}
+.search input::placeholder{color:#6C8CA2}
+.chip{padding:7px 13px;border-radius:20px;border:1px solid var(--rule);background:transparent;
+  color:var(--board-mute);font-size:13.5px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--signal);border-color:var(--signal);color:#062026;font-weight:600}
+.bbtn{padding:8px 14px;border-radius:6px;border:1px solid var(--rule);background:rgba(255,255,255,.05);
+  color:var(--board-ink);font-size:13.5px;cursor:pointer}
+.bbtn:hover{background:rgba(255,255,255,.11)}
+.bbtn.key{background:var(--signal);color:#062026;border-color:var(--signal);font-weight:600}
+
+/* queue strips */
+.qhead,.qrow{display:grid;grid-template-columns:58px 2.1fr 96px 1.35fr 108px 128px;gap:12px;align-items:center}
+.qhead{padding:0 14px 8px;font-size:12px;color:var(--board-mute)}
+.qrow{background:rgba(255,255,255,.035);border:1px solid var(--rule);border-left:4px solid var(--lamp-wait);
+  border-radius:8px;padding:11px 14px;margin-bottom:7px}
+.qrow.s-checked{border-left-color:var(--lamp-done);background:rgba(63,191,143,.07)}
+.qrow.s-active{border-left-color:var(--lamp-live);background:rgba(242,178,62,.10);box-shadow:0 0 0 1px rgba(242,178,62,.3)}
+.qrow.s-issue{border-left-color:var(--lamp-issue);background:rgba(228,89,79,.08)}
+.qrow .sn{color:var(--signal);font-size:14px}
+.qrow.s-checked .sn{color:var(--lamp-done);text-decoration:line-through;text-decoration-color:rgba(63,191,143,.5)}
+.qrow .office{font-size:15px;color:#fff;font-weight:500}
+.qrow .focal{font-size:13px;color:var(--board-mute)}
+.qrow .slot{font-size:14px;color:var(--board-ink)}
+.qrow .link{font-size:13px;color:var(--board-mute)}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border-radius:16px;font-size:13px;white-space:nowrap}
+.b-wait{background:rgba(79,119,148,.22);color:#A9C6D8}
+.b-checked{background:rgba(63,191,143,.18);color:#77E0B7}
+.b-active{background:rgba(242,178,62,.2);color:#FFD68A}
+.b-issue{background:rgba(228,89,79,.18);color:#FF9E96}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.rowacts{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap;grid-column:1/-1;
+  border-top:1px dashed rgba(255,255,255,.09);padding-top:9px;margin-top:3px}
+.mini{border:1px solid var(--rule);background:rgba(255,255,255,.06);color:var(--board-ink);
+  border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer}
+.mini:hover{background:rgba(255,255,255,.14)}
+.mini.go{background:var(--lamp-live);color:#2A1B00;border-color:var(--lamp-live);font-weight:600}
+.mini.ok{background:var(--lamp-done);color:#03291C;border-color:var(--lamp-done);font-weight:600}
+.qempty{padding:26px;text-align:center;color:var(--board-mute);border:1px dashed var(--rule);border-radius:8px}
+@media(max-width:900px){
+  .qhead{display:none}
+  .qrow{grid-template-columns:52px 1fr;grid-auto-rows:auto;row-gap:6px}
+  .qrow .slot,.qrow .link{grid-column:2}
+  .qrow .status,.qrow .rowacts{grid-column:1/-1}
+  .rowacts{justify-content:flex-start}
+}
+.opnote{font-size:12.5px;color:var(--board-mute);margin-top:10px}
+
+/* operator add panel */
+.addpanel{margin-top:12px;padding:14px;border:1px solid var(--rule);border-radius:8px;background:rgba(0,0,0,.18)}
+.addgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px}
+.addgrid input,.addgrid select{padding:8px 10px;border-radius:5px;border:1px solid var(--rule);
+  background:rgba(0,0,0,.25);color:#fff;font-family:inherit;font-size:14px;width:100%}
+.addpanel label{display:block;font-size:12px;color:var(--board-mute);margin-bottom:3px}
+
+/* ---------- OFFICE ZONE ---------- */
+.office{padding:54px 0}
+.office + .office{padding-top:0}
+.sechead{max-width:70ch;margin-bottom:24px}
+.sechead h2{font-family:'Tiro Bangla',serif;font-weight:400;font-size:27px}
+.sechead p{color:#4C5B57;margin-top:6px}
+
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0;border-top:2px solid var(--bottle)}
+.step{padding:18px 20px 20px;border-right:1px solid var(--cream-deep)}
+.step:last-child{border-right:0}
+.step .n{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold);margin-bottom:6px}
+.step h3{font-size:17px;margin-bottom:5px}
+.step p{font-size:14.5px;color:#4C5B57;margin:0}
+
+.svcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.svc{background:#fff;border:1px solid var(--cream-deep);border-radius:8px;padding:18px 20px}
+.svc h3{font-size:17px;margin-bottom:6px;color:var(--bottle)}
+.svc p{font-size:14.5px;color:#4C5B57;margin:0}
+.svc .stat{font-family:'JetBrains Mono',monospace;font-size:24px;color:var(--ink);display:block;margin-bottom:4px}
+
+.formwrap{display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:start}
+@media(max-width:800px){.formwrap{grid-template-columns:1fr}}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){.fgrid{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-size:13.5px;color:#3D4A46}
+.field input,.field select,.field textarea{padding:9px 11px;border:1px solid #CFC7B2;border-radius:5px;
+  background:#fff;font-family:inherit;font-size:15px;color:var(--ink)}
+.field textarea{min-height:86px;resize:vertical}
+.submit{margin-top:16px;background:var(--bottle);color:#fff;border:0;border-radius:5px;padding:11px 22px;
+  font-size:15.5px;cursor:pointer}
+.submit:hover{background:var(--bottle-dim)}
+.receipt{margin-top:14px;border:1px solid var(--bottle);border-left:5px solid var(--gold);background:#fff;
+  border-radius:6px;padding:14px 16px;font-size:14.5px}
+.receipt b{font-family:'JetBrains Mono',monospace;font-size:15px}
+.aside{background:#fff;border:1px solid var(--cream-deep);border-radius:8px;padding:20px}
+.aside h3{font-size:17px;margin-bottom:10px}
+.aside ul{margin:0;padding-left:18px;font-size:14.5px;color:#4C5B57}
+.aside li{margin-bottom:7px}
+
+footer{background:var(--board);color:var(--board-mute);padding:34px 0 24px;font-size:14px;margin-top:20px}
+footer .cols{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:26px}
+@media(max-width:760px){footer .cols{grid-template-columns:1fr}}
+footer h4{color:#fff;font-size:15px;margin-bottom:9px;font-weight:500}
+footer a{color:var(--signal)}
+footer .fine{border-top:1px solid var(--rule);margin-top:24px;padding-top:14px;
+  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:12.5px}
+
+/* display / projector mode */
+.screen{position:fixed;inset:0;background:var(--board);z-index:60;display:none;padding:34px 44px;overflow:auto}
+.screen.on{display:block}
+.screen .top{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;
+  border-bottom:1px solid var(--rule);padding-bottom:14px;margin-bottom:22px}
+.screen h2{font-family:'Tiro Bangla',serif;font-weight:400;color:#fff;font-size:30px}
+.screen .big{font-size:clamp(32px,6vw,64px);color:#fff;font-weight:600;line-height:1.15;margin:10px 0 4px}
+.screen .bigsub{color:var(--signal);font-size:clamp(16px,2.2vw,22px)}
+.screen .bigmeta{color:var(--board-mute);margin-top:10px;font-size:17px}
+.screen .upnext{margin-top:30px;border-top:1px solid var(--rule);padding-top:18px}
+.screen .upnext li{font-size:clamp(16px,2vw,22px);color:var(--board-ink)}
+.screen .close{position:absolute;top:18px;right:22px}
+.screen .scount{display:flex;gap:34px;flex-wrap:wrap;margin-top:22px}
+.screen .scount div b{display:block;font-size:34px;color:#fff;font-family:'JetBrains Mono',monospace}
+.screen .scount div span{font-size:14px;color:var(--board-mute)}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:11px 20px;border-radius:6px;font-size:14.5px;z-index:80;opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.on{opacity:1}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="gov">
+  <div class="wrap">
+    <div class="gov-chain">
+      <span>গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</span>
+      <span>ডাক, টেলিযোগাযোগ ও তথ্যপ্রযুক্তি মন্ত্রণালয়</span>
+      <span>তথ্য ও যোগাযোগ প্রযুক্তি বিভাগ</span>
+      <span>বাংলাদেশ কম্পিউটার কাউন্সিল</span>
+    </div>
+    <div class="gov-right">
+      <span class="mono">MoPTIT/ICT/BCC-VC/2026</span>
+      <span class="mono" id="govClock">--:--:--</span>
+    </div>
+  </div>
+</div>
+
+<header class="mast">
+  <div class="wrap">
+    <div class="brand">
+      <div class="sigil" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2FD2C0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10.5 22 7v10l-7-3.5z"/>
+        </svg>
+      </div>
+      <div>
+        <h1>সরকারি ভিডিও কনফারেন্সিং প্রজেক্ট</h1>
+        <div class="sub">বাংলাদেশ কম্পিউটার কাউন্সিল · আইসিটি বিভাগ<br>Government Video Conferencing Project — BCC, ICT Division</div>
+      </div>
+    </div>
+    <nav class="mainnav" aria-label="প্রধান মেনু">
+      <a class="now" href="#live">লাইভ কিউ</a>
+      <a href="#process">পরীক্ষার ধাপ</a>
+      <a href="#services">সেবা</a>
+      <a href="#request">সংযোগের আবেদন</a>
+      <a href="#support">সহায়তা</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ======================= LIVE BOARD ======================= -->
+<section class="board" id="live">
+  <div class="wrap">
+
+    <div class="board-head">
+      <div>
+        <h2>লাইভ সংযোগ পরীক্ষা বোর্ড</h2>
+        <p>কনফারেন্স শুরুর আগে প্রতিটি প্রান্তের অডিও, ভিডিও ও নেটওয়ার্ক সংযোগ ক্রমিক অনুযায়ী পরীক্ষা করা হয়। আপনার সিরিয়াল, আনুমানিক সময় এবং আপনার আগে-পরে কে আছেন — সবই নিচের বোর্ডে সরাসরি দেখা যাবে।</p>
+      </div>
+      <div class="sess">
+        <b class="mono" id="sessCode">VC-2026-0911-A</b>
+        সেশন: জাতীয় সমন্বয় সভা<br>
+        সভাপতি: সচিব, আইসিটি বিভাগ<br>
+        নির্ধারিত শুরু: সকাল ১১:০০
+      </div>
+    </div>
+
+    <div class="live-grid">
+      <div class="nowcard" id="nowCard" aria-live="polite">
+        <div class="tagline"><span class="pulse"></span> এখন পরীক্ষা চলছে</div>
+        <div id="nowBody"><div class="idle">এখনো কোনো প্রান্তের পরীক্ষা শুরু হয়নি। অপারেটর মোড থেকে “শুরু” চাপুন।</div></div>
+      </div>
+
+      <div class="nextcard">
+        <h4>এরপর যাদের ডাকা হবে</h4>
+        <ul class="nextlist" id="nextList"></ul>
+      </div>
+    </div>
+
+    <div class="rail">
+      <div class="rail-ticks" id="rail" role="img" aria-label="সার্বিক অগ্রগতি"></div>
+      <div class="rail-legend">
+        <span><b id="cTotal">0</b>মোট প্রান্ত</span>
+        <span><b id="cDone">0</b>চেক সম্পন্ন</span>
+        <span><b id="cWait">0</b>অপেক্ষমাণ</span>
+        <span><b id="cIssue">0</b>সমস্যা চিহ্নিত</span>
+        <span><b id="cPct">0%</b>অগ্রগতি</span>
+      </div>
+    </div>
+
+    <div class="ctrls">
+      <div class="search">
+        <label class="sr" for="q">জেলা বা দপ্তর খুঁজুন</label>
+        <input id="q" type="search" placeholder="জেলা, দপ্তর বা ফোকাল পয়েন্ট খুঁজুন…">
+      </div>
+      <button class="chip" data-filter="all" aria-pressed="true">সব</button>
+      <button class="chip" data-filter="waiting" aria-pressed="false">অপেক্ষমাণ</button>
+      <button class="chip" data-filter="checked" aria-pressed="false">চেক সম্পন্ন</button>
+      <button class="chip" data-filter="issue" aria-pressed="false">সমস্যা</button>
+      <button class="bbtn" id="screenBtn">বড় পর্দায় দেখান</button>
+      <button class="bbtn" id="csvBtn">CSV নামান</button>
+      <button class="bbtn key" id="opBtn" aria-pressed="false">অপারেটর মোড</button>
+    </div>
+
+    <div class="qhead" aria-hidden="true">
+      <div>ক্রমিক</div><div>দপ্তর / প্রান্ত</div><div>নির্ধারিত সময়</div>
+      <div>ফোকাল পয়েন্ট</div><div>সংযোগ</div><div style="text-align:right">অবস্থা</div>
+    </div>
+    <div id="queue"></div>
+
+    <div class="opnote" id="opNote">অপারেটর মোড চালু করলে প্রতিটি সারিতে “শুরু”, “চেক সম্পন্ন”, “সমস্যা” ও ক্রম পরিবর্তনের বোতাম যুক্ত হবে।</div>
+
+    <div class="addpanel" id="addPanel" hidden>
+      <div class="addgrid">
+        <div><label for="aOffice">দপ্তর / প্রান্তের নাম</label><input id="aOffice" placeholder="জেলা প্রশাসকের কার্যালয়, নোয়াখালী"></div>
+        <div><label for="aSlot">নির্ধারিত সময়</label><input id="aSlot" placeholder="১১:৪০"></div>
+        <div><label for="aFocal">ফোকাল পয়েন্ট</label><input id="aFocal" placeholder="সহকারী প্রোগ্রামার — নাম"></div>
+        <div><label for="aLink">সংযোগ মাধ্যম</label>
+          <select id="aLink"><option>ফাইবার (BdREN)</option><option>ফাইবার (ইনফো সরকার)</option><option>ব্রডব্যান্ড</option><option>মোবাইল ব্রডব্যান্ড</option></select></div>
+        <div style="display:flex;align-items:flex-end;gap:8px">
+          <button class="bbtn key" id="addBtn">কিউতে যোগ করুন</button>
+          <button class="bbtn" id="resetBtn">বোর্ড রিসেট</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ======================= OFFICE ZONE ======================= -->
+<section class="office" id="process">
+  <div class="wrap">
+    <div class="sechead">
+      <h2>সংযোগ পরীক্ষা যেভাবে হয়</h2>
+      <p>প্রতিটি সভার নির্ধারিত সময়ের ৪৫ মিনিট আগে বিসিসি কন্ট্রোল রুম থেকে ক্রমিক অনুযায়ী প্রান্তগুলো ডাকা হয়।</p>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="n">ধাপ ০১</div><h3>প্রান্ত সংযুক্ত হওয়া</h3><p>ফোকাল পয়েন্ট নির্ধারিত সময়ের ৪৫ মিনিট আগে কনফারেন্স রুমে লগ-ইন করে অপেক্ষমাণ তালিকায় থাকবেন।</p></div>
+      <div class="step"><div class="n">ধাপ ০২</div><h3>কন্ট্রোল রুম থেকে ডাক</h3><p>বোর্ডে আপনার সারি হলুদ হবে এবং কন্ট্রোল রুম অডিও, ভিডিও ও স্ক্রিন শেয়ার পরীক্ষা করবে।</p></div>
+      <div class="step"><div class="n">ধাপ ০৩</div><h3>চিহ্নিতকরণ</h3><p>পরীক্ষা সফল হলে সারিতে “চেক সম্পন্ন” সবুজ চিহ্ন বসবে; সমস্যা থাকলে লাল চিহ্নসহ কারণ লিপিবদ্ধ হবে।</p></div>
+      <div class="step"><div class="n">ধাপ ০৪</div><h3>মিউট অবস্থায় অপেক্ষা</h3><p>পরীক্ষা শেষে মাইক্রোফোন মিউট রেখে সভা শুরুর অপেক্ষা করুন; পুনরায় পরীক্ষার প্রয়োজন হলে কন্ট্রোল রুম ডাকবে।</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="office" id="services">
+  <div class="wrap">
+    <div class="sechead">
+      <h2>প্রকল্পের সেবাসমূহ</h2>
+      <p>সচিবালয় থেকে উপজেলা পর্যন্ত সরকারি দপ্তরগুলোর জন্য প্রান্তিক ভিডিও কনফারেন্সিং অবকাঠামো, কারিগরি সহায়তা ও প্রশিক্ষণ।</p>
+    </div>
+    <div class="svcs">
+      <div class="svc"><span class="stat mono">৬৪</span><h3>জেলা প্রান্ত</h3><p>প্রতিটি জেলা প্রশাসকের কার্যালয়ে স্থাপিত ভিডিও কনফারেন্স রুম ও যন্ত্রপাতির রক্ষণাবেক্ষণ।</p></div>
+      <div class="svc"><span class="stat mono">৪৯৫</span><h3>উপজেলা প্রান্ত</h3><p>উপজেলা পরিষদ ও ইউএনও কার্যালয়ের প্রান্ত সংযোগ, ব্যান্ডউইথ বরাদ্দ ও সমস্যা নিরসন।</p></div>
+      <div class="svc"><span class="stat mono">২৪×৭</span><h3>কন্ট্রোল রুম</h3><p>আগারগাঁওয়ের কেন্দ্রীয় কন্ট্রোল রুম থেকে সভা পরিচালনা, রেকর্ডিং ও লাইভ মনিটরিং।</p></div>
+      <div class="svc"><span class="stat mono">১৫ মি.</span><h3>সাড়াদানের সময়</h3><p>সভা চলাকালে সংযোগ বিচ্ছিন্ন হলে গড়ে ১৫ মিনিটের মধ্যে বিকল্প সংযোগ চালু করা হয়।</p></div>
+      <div class="svc"><h3>সভা রেকর্ডিং ও কার্যবিবরণী</h3><p>অনুমোদিত সভার রেকর্ডিং সংরক্ষণ এবং দপ্তরের চাহিদা অনুযায়ী সরবরাহ।</p></div>
+      <div class="svc"><h3>ফোকাল পয়েন্ট প্রশিক্ষণ</h3><p>জেলা ও উপজেলা পর্যায়ের কর্মকর্তাদের জন্য যন্ত্রপাতি পরিচালনা ও ট্রাবলশুটিং প্রশিক্ষণ।</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="office" id="request">
+  <div class="wrap">
+    <div class="sechead">
+      <h2>সভার জন্য সংযোগের আবেদন</h2>
+      <p>নতুন সভা আয়োজন বা প্রান্ত যুক্ত করার জন্য নিচের ফরম পূরণ করুন। জমা দেওয়ার সাথে সাথেই একটি ট্র্যাকিং নম্বর পাবেন।</p>
+    </div>
+    <div class="formwrap">
+      <div>
+        <div class="fgrid">
+          <div class="field"><label for="rOffice">দপ্তরের নাম</label><input id="rOffice" placeholder="জেলা প্রশাসকের কার্যালয়, লক্ষ্মীপুর"></div>
+          <div class="field"><label for="rPerson">আবেদনকারীর নাম ও পদবি</label><input id="rPerson" placeholder="সহকারী প্রোগ্রামার"></div>
+          <div class="field"><label for="rPhone">মোবাইল নম্বর</label><input id="rPhone" placeholder="01XXXXXXXXX"></div>
+          <div class="field"><label for="rDate">সভার তারিখ</label><input id="rDate" type="date"></div>
+          <div class="field"><label for="rTime">সভার সময়</label><input id="rTime" type="time"></div>
+          <div class="field"><label for="rEnds">সংযুক্ত প্রান্তের সংখ্যা</label><input id="rEnds" type="number" min="1" value="1"></div>
+          <div class="field full"><label for="rNote">সভার বিষয় ও বিশেষ চাহিদা</label><textarea id="rNote" placeholder="যেমন: রেকর্ডিং প্রয়োজন, উপস্থাপনা শেয়ার করা হবে"></textarea></div>
+        </div>
+        <button class="submit" id="reqBtn">আবেদন জমা দিন</button>
+        <div id="receipt" hidden class="receipt"></div>
+      </div>
+      <aside class="aside">
+        <h3>আবেদনের আগে যা প্রস্তুত রাখবেন</h3>
+        <ul>
+          <li>সভার অনুমোদন সংক্রান্ত পত্র বা স্মারক নম্বর</li>
+          <li>প্রান্তের ফোকাল পয়েন্টের নাম ও সরাসরি যোগাযোগ নম্বর</li>
+          <li>কক্ষের ইন্টারনেট সংযোগ ও ব্যান্ডউইথের তথ্য</li>
+          <li>উপস্থাপনা থাকলে সভার ২৪ ঘণ্টা আগে কন্ট্রোল রুমে প্রেরণ</li>
+        </ul>
+        <h3 style="margin-top:16px">নির্ধারিত সময়সীমা</h3>
+        <ul>
+          <li>সাধারণ সভা: ৩ কার্যদিবস আগে আবেদন</li>
+          <li>জরুরি সভা: ন্যূনতম ৪ ঘণ্টা আগে, কন্ট্রোল রুমে ফোনসহ</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<footer id="support">
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <h4>সরকারি ভিডিও কনফারেন্সিং প্রজেক্ট</h4>
+        <p>বাংলাদেশ কম্পিউটার কাউন্সিল, আইসিটি টাওয়ার, আগারগাঁও, ঢাকা–১২০৭। তথ্য ও যোগাযোগ প্রযুক্তি বিভাগ, ডাক, টেলিযোগাযোগ ও তথ্যপ্রযুক্তি মন্ত্রণালয়।</p>
+        <p><a href="https://www.facebook.com/p/Government-Video-Conferencing-Project-BCC-ICT-Division-61583018342155/" target="_blank" rel="noopener">ফেসবুক পেজ</a></p>
+      </div>
+      <div>
+        <h4>কন্ট্রোল রুম</h4>
+        <p>হটলাইন: ০২-৫৫০০৬৯৭৮<br>ইমেইল: vc@bcc.gov.bd<br>সেবা সময়: সভা চলাকালীন ২৪ ঘণ্টা</p>
+      </div>
+      <div>
+        <h4>দ্রুত লিংক</h4>
+        <p><a href="#live">লাইভ কিউ</a><br><a href="#process">পরীক্ষার ধাপ</a><br><a href="#request">সংযোগের আবেদন</a></p>
+      </div>
+    </div>
+    <div class="fine">
+      <span class="mono">ডকেট: MoPTIT/ICT/BCC-VC/2026/001</span>
+      <span>সর্বশেষ হালনাগাদ: <span id="lastUpd" class="mono">—</span></span>
+    </div>
+  </div>
+</footer>
+
+<div class="screen" id="boardScreen" role="dialog" aria-label="বড় পর্দার বোর্ড">
+  <button class="bbtn close" id="screenClose">বন্ধ করুন</button>
+  <div class="top">
+    <h2>সংযোগ পরীক্ষা — লাইভ বোর্ড</h2>
+    <div class="mono" id="screenClock" style="color:var(--signal);font-size:22px">--:--:--</div>
+  </div>
+  <div id="screenNow"></div>
+  <div class="scount">
+    <div><b id="sDone">0</b><span>চেক সম্পন্ন</span></div>
+    <div><b id="sWait">0</b><span>অপেক্ষমাণ</span></div>
+    <div><b id="sIssue">0</b><span>সমস্যা</span></div>
+    <div><b id="sPct">0%</b><span>অগ্রগতি</span></div>
+  </div>
+  <div class="upnext">
+    <h4 style="color:var(--board-mute);font-weight:500;margin-bottom:8px">এরপর যাদের ডাকা হবে</h4>
+    <ul class="nextlist" id="screenNext"></ul>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ---------------- storage adapter ---------------- */
+const KEY='bcc-vc-board-v1';
+const mem={};
+const store={
+  async get(k){
+    try{ if(window.storage){const r=await window.storage.get(k,false); return r? r.value:null;} }catch(e){}
+    try{ return localStorage.getItem(k); }catch(e){}
+    return mem[k]??null;
+  },
+  async set(k,v){
+    try{ if(window.storage){await window.storage.set(k,v,false); return;} }catch(e){}
+    try{ localStorage.setItem(k,v); return; }catch(e){}
+    mem[k]=v;
+  }
+};
+
+/* ---------------- seed data ---------------- */
+const SEED=[
+ {office:'বিভাগীয় কমিশনারের কার্যালয়, চট্টগ্রাম',slot:'১০:১৫',focal:'সহকারী প্রোগ্রামার — রুবাইয়া সুলতানা',link:'ফাইবার (ইনফো সরকার)'},
+ {office:'জেলা প্রশাসকের কার্যালয়, লক্ষ্মীপুর',slot:'১০:২০',focal:'সহকারী প্রোগ্রামার — মোঃ শাহরিয়ার হোসেন',link:'ফাইবার (BdREN)'},
+ {office:'জেলা প্রশাসকের কার্যালয়, নোয়াখালী',slot:'১০:২৫',focal:'প্রোগ্রামার — তানভীর আহমেদ',link:'ফাইবার (ইনফো সরকার)'},
+ {office:'জেলা প্রশাসকের কার্যালয়, কুমিল্লা',slot:'১০:৩০',focal:'সহকারী প্রোগ্রামার — নুসরাত জাহান',link:'ফাইবার (BdREN)'},
+ {office:'জেলা প্রশাসকের কার্যালয়, ফেনী',slot:'১০:৩৫',focal:'সহকারী প্রোগ্রামার — আবদুল্লাহ আল মামুন',link:'ব্রডব্যান্ড'},
+ {office:'উপজেলা নির্বাহী অফিসারের কার্যালয়, রায়পুর',slot:'১০:৪০',focal:'আইসিটি সহায়ক — ফারজানা আক্তার',link:'ব্রডব্যান্ড'},
+ {office:'উপজেলা নির্বাহী অফিসারের কার্যালয়, রামগতি',slot:'১০:৪৫',focal:'আইসিটি সহায়ক — মেহেদী হাসান',link:'মোবাইল ব্রডব্যান্ড'},
+ {office:'জেলা প্রশাসকের কার্যালয়, রাজশাহী',slot:'১০:৫০',focal:'প্রোগ্রামার — সাদিয়া রহমান',link:'ফাইবার (BdREN)'},
+ {office:'জেলা প্রশাসকের কার্যালয়, খুলনা',slot:'১০:৫৫',focal:'সহকারী প্রোগ্রামার — ইমরান কবির',link:'ফাইবার (ইনফো সরকার)'},
+ {office:'জেলা প্রশাসকের কার্যালয়, সিলেট',slot:'১১:০০',focal:'সহকারী প্রোগ্রামার — রেজাউল করিম',link:'ফাইবার (BdREN)'},
+ {office:'জেলা প্রশাসকের কার্যালয়, রংপুর',slot:'১১:০৫',focal:'প্রোগ্রামার — শারমিন নাহার',link:'ফাইবার (ইনফো সরকার)'},
+ {office:'জেলা প্রশাসকের কার্যালয়, বরিশাল',slot:'১১:১০',focal:'সহকারী প্রোগ্রামার — জাহিদুল ইসলাম',link:'ব্রডব্যান্ড'},
+ {office:'জেলা প্রশাসকের কার্যালয়, ময়মনসিংহ',slot:'১১:১৫',focal:'সহকারী প্রোগ্রামার — আফরোজা খাতুন',link:'ফাইবার (BdREN)'},
+ {office:'জেলা প্রশাসকের কার্যালয়, বান্দরবান',slot:'১১:২০',focal:'আইসিটি সহায়ক — উম্মে হাবিবা',link:'মোবাইল ব্রডব্যান্ড'},
+ {office:'ডিওআইসিটি জেলা কার্যালয়, চট্টগ্রাম',slot:'১১:২৫',focal:'সহকারী প্রোগ্রামার — নাফিস ইকবাল',link:'ফাইবার (BdREN)'},
+ {office:'বিসিসি সদর দপ্তর, আগারগাঁও',slot:'১১:৩০',focal:'কন্ট্রোল রুম অপারেটর — টিম-এ',link:'ফাইবার (BdREN)'}
+];
+const BN='০১২৩৪৫৬৭৮৯';
+const bn=n=>String(n).replace(/\d/g,d=>BN[d]);
+const pad=n=>String(n).padStart(3,'0');
+
+let state={items:[],updated:null};
+let filter='all', query='', opMode=false;
+
+/* ---------------- init ---------------- */
+(async function init(){
+  const raw=await store.get(KEY);
+  if(raw){ try{ state=JSON.parse(raw); }catch(e){ state=fresh(); } }
+  else state=fresh();
+  if(!state.items||!state.items.length) state=fresh();
+  render(); tick(); setInterval(tick,1000);
+})();
+
+function fresh(){
+  return {items:SEED.map((s,i)=>({id:'e'+(i+1)+'-'+Date.now(),sn:i+1,...s,status:'waiting',startedAt:null,doneAt:null,note:''})),updated:Date.now()};
+}
+async function save(){ state.updated=Date.now(); await store.set(KEY,JSON.stringify(state)); }
+
+/* ---------------- rendering ---------------- */
+function statusMeta(s){
+  return {
+    waiting:{cls:'b-wait',label:'অপেক্ষমাণ',mark:'○'},
+    active:{cls:'b-active',label:'চলছে',mark:'◉'},
+    checked:{cls:'b-checked',label:'চেক সম্পন্ন',mark:'✓'},
+    issue:{cls:'b-issue',label:'সমস্যা',mark:'!'}
+  }[s];
+}
+function counts(){
+  const t=state.items.length;
+  const d=state.items.filter(i=>i.status==='checked').length;
+  const w=state.items.filter(i=>i.status==='waiting').length;
+  const s=state.items.filter(i=>i.status==='issue').length;
+  return {t,d,w,s,pct:t?Math.round(d/t*100):0};
+}
+function activeItem(){ return state.items.find(i=>i.status==='active')||null; }
+function upNext(n){ return state.items.filter(i=>i.status==='waiting').slice(0,n); }
+
+function render(){
+  renderNow(); renderNext(); renderRail(); renderQueue(); renderScreen();
+  const c=counts();
+  cTotal.textContent=bn(c.t); cDone.textContent=bn(c.d);
+  cWait.textContent=bn(c.w); cIssue.textContent=bn(c.s); cPct.textContent=bn(c.pct)+'%';
+  lastUpd.textContent=state.updated?new Date(state.updated).toLocaleString('bn-BD'):'—';
+}
+
+function renderNow(){
+  const a=activeItem();
+  if(!a){ nowBody.innerHTML='<div class="idle">এই মুহূর্তে কোনো প্রান্তের পরীক্ষা চলছে না। অপারেটর মোড থেকে পরবর্তী প্রান্ত শুরু করুন।</div>'; return; }
+  nowBody.innerHTML=`
+    <h3>${esc(a.office)}</h3>
+    <div class="place">${esc(a.focal)} · ${esc(a.link)}</div>
+    <div class="nowmeta">
+      <div><span>ক্রমিক</span><b class="mono">${bn(pad(a.sn))}</b></div>
+      <div><span>নির্ধারিত সময়</span><b class="mono">${esc(a.slot)}</b></div>
+      <div><span>চলমান সময়</span><b class="mono" id="elapsed">০০:০০</b></div>
+    </div>`;
+}
+function renderNext(){
+  const n=upNext(4);
+  nextList.innerHTML=n.length? n.map(i=>
+    `<li><span class="sn mono">${bn(pad(i.sn))}</span><span>${esc(shorten(i.office))}</span><span class="tm mono">${esc(i.slot)}</span></li>`).join('')
+    : '<li class="empty">অপেক্ষমাণ তালিকা শেষ। সব প্রান্তের পরীক্ষা হয়ে গেছে।</li>';
+}
+function renderRail(){
+  rail.innerHTML=state.items.map(i=>{
+    const c=i.status==='checked'?'done':i.status==='active'?'live':i.status==='issue'?'issue':'';
+    return `<i class="${c}" title="${esc(i.office)}"></i>`;
+  }).join('');
+}
+function shorten(s){ return s.length>42? s.slice(0,41)+'…' : s; }
+function esc(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function renderQueue(){
+  const q=query.trim().toLowerCase();
+  const list=state.items.filter(i=>{
+    const okF = filter==='all' ? true : filter==='waiting' ? (i.status==='waiting'||i.status==='active') : i.status===filter;
+    const okQ = !q || (i.office+i.focal+i.slot).toLowerCase().includes(q);
+    return okF&&okQ;
+  });
+  if(!list.length){ queue.innerHTML='<div class="qempty">এই শর্তে কোনো প্রান্ত পাওয়া যায়নি। ফিল্টার বদলে বা খোঁজ মুছে আবার দেখুন।</div>'; return; }
+  queue.innerHTML=list.map(i=>{
+    const m=statusMeta(i.status);
+    const acts = opMode? `
+      <div class="rowacts">
+        ${i.status!=='active'?`<button class="mini go" data-act="start" data-id="${i.id}">শুরু</button>`:''}
+        ${i.status!=='checked'?`<button class="mini ok" data-act="check" data-id="${i.id}">চেক সম্পন্ন</button>`:''}
+        ${i.status!=='issue'?`<button class="mini" data-act="issue" data-id="${i.id}">সমস্যা</button>`:''}
+        ${i.status!=='waiting'?`<button class="mini" data-act="wait" data-id="${i.id}">কিউতে ফেরত</button>`:''}
+        <button class="mini" data-act="up" data-id="${i.id}" aria-label="উপরে সরান">↑</button>
+        <button class="mini" data-act="down" data-id="${i.id}" aria-label="নিচে সরান">↓</button>
+        <button class="mini" data-act="del" data-id="${i.id}" aria-label="বাদ দিন">✕</button>
+      </div>` : '';
+    const done = i.doneAt? `<div class="focal mono">সম্পন্ন: ${new Date(i.doneAt).toLocaleTimeString('bn-BD',{hour:'2-digit',minute:'2-digit'})}</div>`:'';
+    return `<div class="qrow s-${i.status}">
+      <div class="sn mono">${bn(pad(i.sn))}</div>
+      <div><div class="office">${esc(i.office)}</div><div class="focal">${esc((i.focal.split('—')[0]||'').trim()||'ফোকাল পয়েন্ট')}</div></div>
+      <div class="slot mono">${esc(i.slot)}</div>
+      <div class="focal">${esc(i.focal.split('—')[1]||i.focal)}${done}</div>
+      <div class="link">${esc(i.link)}</div>
+      <div class="status" style="text-align:right"><span class="badge ${m.cls}"><span class="dot"></span>${m.label}</span></div>
+      ${acts}
+    </div>`;
+  }).join('');
+}
+
+function renderScreen(){
+  const a=activeItem(), c=counts();
+  screenNow.innerHTML = a? `
+    <div style="color:var(--lamp-live);font-size:18px;display:flex;align-items:center;gap:10px">
+      <span class="pulse"></span> এখন পরীক্ষা চলছে — ক্রমিক ${bn(pad(a.sn))}</div>
+    <div class="big">${esc(a.office)}</div>
+    <div class="bigsub">${esc(a.focal)}</div>
+    <div class="bigmeta">নির্ধারিত সময় ${esc(a.slot)} · ${esc(a.link)} · চলমান <span class="mono" id="elapsed2">০০:০০</span></div>`
+   : `<div class="big" style="color:var(--board-mute)">পরীক্ষা শুরুর অপেক্ষায়</div>
+      <div class="bigsub">কন্ট্রোল রুম পরবর্তী প্রান্ত ডাকলে এখানে দেখা যাবে</div>`;
+  sDone.textContent=bn(c.d); sWait.textContent=bn(c.w); sIssue.textContent=bn(c.s); sPct.textContent=bn(c.pct)+'%';
+  const n=upNext(6);
+  screenNext.innerHTML=n.length? n.map(i=>`<li><span class="sn mono">${bn(pad(i.sn))}</span><span>${esc(i.office)}</span><span class="tm mono">${esc(i.slot)}</span></li>`).join('')
+    : '<li class="empty">সব প্রান্তের পরীক্ষা সম্পন্ন।</li>';
+}
+
+/* ---------------- clock + elapsed ---------------- */
+function tick(){
+  const now=new Date();
+  const t=now.toLocaleTimeString('bn-BD',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  govClock.textContent=t; screenClock.textContent=t;
+  const a=activeItem();
+  if(a&&a.startedAt){
+    const s=Math.floor((Date.now()-a.startedAt)/1000);
+    const txt=bn(String(Math.floor(s/60)).padStart(2,'0'))+':'+bn(String(s%60).padStart(2,'0'));
+    const e1=document.getElementById('elapsed'); if(e1)e1.textContent=txt;
+    const e2=document.getElementById('elapsed2'); if(e2)e2.textContent=txt;
+  }
+}
+
+/* ---------------- actions ---------------- */
+function renumber(){ state.items.forEach((i,x)=>i.sn=x+1); }
+queue.addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-act]'); if(!b) return;
+  const {act,id}=b.dataset;
+  const idx=state.items.findIndex(i=>i.id===id); if(idx<0) return;
+  const it=state.items[idx];
+  if(act==='start'){ state.items.forEach(i=>{ if(i.status==='active'){i.status='waiting';i.startedAt=null;} });
+    it.status='active'; it.startedAt=Date.now(); toast(it.office+' — পরীক্ষা শুরু হলো'); }
+  if(act==='check'){ it.status='checked'; it.doneAt=Date.now(); it.startedAt=null;
+    toast(it.office+' — চেক সম্পন্ন');
+    const nx=state.items.find(i=>i.status==='waiting');
+    if(nx){ nx.status='active'; nx.startedAt=Date.now(); } }
+  if(act==='issue'){ it.status='issue'; it.startedAt=null; toast(it.office+' — সমস্যা চিহ্নিত হলো'); }
+  if(act==='wait'){ it.status='waiting'; it.startedAt=null; it.doneAt=null; }
+  if(act==='up'&&idx>0){ [state.items[idx-1],state.items[idx]]=[state.items[idx],state.items[idx-1]]; renumber(); }
+  if(act==='down'&&idx<state.items.length-1){ [state.items[idx+1],state.items[idx]]=[state.items[idx],state.items[idx+1]]; renumber(); }
+  if(act==='del'){ state.items.splice(idx,1); renumber(); toast('প্রান্তটি কিউ থেকে বাদ দেওয়া হলো'); }
+  await save(); render();
+});
+
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed','false'));
+  c.setAttribute('aria-pressed','true'); filter=c.dataset.filter; renderQueue();
+}));
+q.addEventListener('input',e=>{ query=e.target.value; renderQueue(); });
+
+opBtn.addEventListener('click',()=>{
+  opMode=!opMode; opBtn.setAttribute('aria-pressed',String(opMode));
+  opBtn.textContent=opMode?'অপারেটর মোড বন্ধ':'অপারেটর মোড';
+  addPanel.hidden=!opMode;
+  opNote.textContent=opMode?'অপারেটর মোড চালু। “চেক সম্পন্ন” চাপলে পরের অপেক্ষমাণ প্রান্ত স্বয়ংক্রিয়ভাবে শুরু হবে।'
+    :'অপারেটর মোড চালু করলে প্রতিটি সারিতে “শুরু”, “চেক সম্পন্ন”, “সমস্যা” ও ক্রম পরিবর্তনের বোতাম যুক্ত হবে।';
+  renderQueue();
+});
+
+addBtn.addEventListener('click',async()=>{
+  const o=aOffice.value.trim();
+  if(!o){ toast('দপ্তরের নাম লিখুন'); aOffice.focus(); return; }
+  state.items.push({id:'e'+Date.now(),sn:state.items.length+1,office:o,slot:aSlot.value.trim()||'—',
+    focal:aFocal.value.trim()||'ফোকাল পয়েন্ট নির্ধারিত হয়নি',link:aLink.value,status:'waiting',startedAt:null,doneAt:null});
+  aOffice.value=aSlot.value=aFocal.value='';
+  await save(); render(); toast('কিউতে যোগ হলো');
+});
+resetBtn.addEventListener('click',async()=>{
+  if(!confirm('বোর্ডের সব অবস্থা মুছে নমুনা তালিকায় ফিরে যাবে। চালিয়ে যাবেন?')) return;
+  state=fresh(); await save(); render(); toast('বোর্ড রিসেট হলো');
+});
+
+csvBtn.addEventListener('click',()=>{
+  const rows=[['ক্রমিক','দপ্তর','নির্ধারিত সময়','ফোকাল পয়েন্ট','সংযোগ','অবস্থা','সম্পন্নের সময়']];
+  state.items.forEach(i=>rows.push([i.sn,i.office,i.slot,i.focal,i.link,statusMeta(i.status).label,
+    i.doneAt?new Date(i.doneAt).toLocaleString('bn-BD'):'']));
+  const csv='\uFEFF'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='bcc-vc-check-queue.csv'; a.click(); toast('CSV নামানো হলো');
+});
+
+screenBtn.addEventListener('click',()=>{ boardScreen.classList.add('on'); renderScreen(); });
+screenClose.addEventListener('click',()=>boardScreen.classList.remove('on'));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') boardScreen.classList.remove('on'); });
+
+reqBtn.addEventListener('click',()=>{
+  if(!rOffice.value.trim()||!rPerson.value.trim()){ toast('দপ্তর ও আবেদনকারীর নাম আবশ্যক'); rOffice.focus(); return; }
+  const seq=String(Math.floor(Math.random()*900)+100);
+  receipt.hidden=false;
+  receipt.innerHTML=`আবেদন গৃহীত হয়েছে। ট্র্যাকিং নম্বর <b>MoPTIT/ICT/BCC-VC/2026/${seq}</b><br>
+    কন্ট্রোল রুম থেকে ${esc(rPerson.value.trim())} — এর সাথে এক কার্যদিবসের মধ্যে যোগাযোগ করা হবে।`;
+  receipt.scrollIntoView({behavior:'smooth',block:'center'});
+});
+
+let tq;
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on');
+  clearTimeout(tq); tq=setTimeout(()=>t.classList.remove('on'),2600); }
+</script>
+</body>
+</html>
