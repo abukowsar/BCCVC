@@ -81,7 +81,7 @@ export default function LandingPage() {
           <div className="lp-live-main">
             <span className="lp-badge"><i /> এখন লাইভ</span>
             <h2>{liveEvent.title}</h2>
-            <p>{liveEvent.owner}{liveEvent.partner && <> · সহযোগী: {liveEvent.partner}</>} · {liveEvent.date} · প্রকাশিত তালিকা: {trial.scopeLabel}</p>
+            <p>{liveEvent.owner}{liveEvent.partner && <> · সহযোগী: {liveEvent.partner}</>} · {liveEvent.date}{liveEvent.trialDate && <> · ট্রায়াল: {liveEvent.trialDate}</>} · প্রকাশিত তালিকা: {trial.scopeLabel}</p>
             <div className="lp-progress-label"><span>সংযোগ পরীক্ষা অগ্রগতি</span><b>{toBn(readyCount)} / {toBn(trial.entries.length)} প্রান্ত প্রস্তুত</b></div>
             <div className="lp-progress"><i style={{ width: `${progress}%` }} /></div>
           </div>

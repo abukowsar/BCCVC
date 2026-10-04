@@ -1,7 +1,7 @@
 import { createRemoteStore } from "./remote-store";
 import { initialEvents } from "./default-data";
 
-export type EventItem = { title: string; date: string; owner: string; partner?: string; count: string; status: string; tone: string; webrtcLink: string };
+export type EventItem = { title: string; date: string; owner: string; partner?: string; /** Connection trial (rehearsal) time, display text */ trialDate?: string; count: string; status: string; tone: string; webrtcLink: string };
 
 const MAX_EVENTS = 200;
 
@@ -9,7 +9,8 @@ function isEventItem(value: unknown): value is EventItem {
   if (!value || typeof value !== "object") return false;
   const entry = value as Record<string, unknown>;
   return ["title", "date", "owner", "count", "status", "tone", "webrtcLink"].every((field) => typeof entry[field] === "string")
-    && (entry.partner === undefined || typeof entry.partner === "string");
+    && (entry.partner === undefined || typeof entry.partner === "string")
+    && (entry.trialDate === undefined || typeof entry.trialDate === "string");
 }
 
 export function isEventList(value: unknown): value is EventItem[] {
