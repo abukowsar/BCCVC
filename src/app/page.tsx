@@ -9,6 +9,7 @@ import { getWebrtcLinkServerSnapshot, getWebrtcLinkSnapshot, subscribeWebrtcLink
 import { getLiveEventsServerSnapshot, getLiveEventsSnapshot, subscribeLiveEvents } from "./events-store";
 import { submitSupportMessage } from "./support-store";
 import HeroIllustration from "./hero-illustration";
+import JoinMeeting from "./join-meeting";
 
 const LIVE_EVENT_ID = "VC-2026-0911-A";
 const districtCount = new Set(bdOfficeRoster.filter((office) => office.type === "জেলা অফিস").map((office) => office.district)).size;
@@ -86,7 +87,7 @@ export default function LandingPage() {
           </div>
           <div className="lp-live-actions">
             <Link href={`/event/${LIVE_EVENT_ID}`} className="lp-btn primary-lg">পাবলিক বোর্ড খুলুন</Link>
-            {joinLink ? <a href={joinLink} target="_blank" rel="noopener noreferrer" className="lp-btn outline">↗ মিটিংয়ে যোগ দিন</a> : <span className="lp-muted">যোগদানের লিংক এখনো প্রকাশিত হয়নি</span>}
+            {joinLink ? <JoinMeeting eventTitle={liveEvent.title} link={joinLink} className="lp-btn outline" onNotify={(message) => { setNotice(message); window.setTimeout(() => setNotice(""), 3200); }} /> : <span className="lp-muted">যোগদানের লিংক এখনো প্রকাশিত হয়নি</span>}
           </div>
         </div>;
       })}

@@ -13,6 +13,7 @@ export const COLLECTIONS = {
   trialResults: "trial_results",
   notes: "notes",
   settings: "settings",
+  connections: "connections",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
@@ -30,6 +31,7 @@ const INDEXES: Record<CollectionName, IndexDescription[]> = {
   trial_results: [{ key: { position: 1 } }],
   notes: [{ key: { position: 1 } }],
   settings: [],
+  connections: [{ key: { id: 1 }, unique: true }, { key: { eventTitle: 1, joinedAt: -1 } }, { key: { joinedAt: -1 } }],
 };
 
 function startingDocuments(name: CollectionName, now: Date): Record<string, unknown>[] {

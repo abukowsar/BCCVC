@@ -9,6 +9,8 @@ import { describeTrialEntry, EMPTY_TRIAL_SCOPE, getTrialScopeServerSnapshot, get
 import { getWebrtcLinkServerSnapshot, getWebrtcLinkSnapshot, publishWebrtcLink, subscribeWebrtcLink } from "../webrtc-store";
 import { deleteNote, getNotesServerSnapshot, getNotesSnapshot, publishNote, subscribeNotes } from "../note-store";
 import { formatSupportTime, getSupportServerSnapshot, getSupportSnapshot, resolveSupportMessage, subscribeSupportMessages, submitSupportMessage, type SupportMessage } from "../support-store";
+import { formatDuration, type ReportRow, type ReportSummary } from "../connection-types";
+import { closeConnection, getReportServerSnapshot, getReportSnapshot, subscribeReport } from "../reports-store";
 import { deleteEvent, EVENT_STATUSES, getEventsServerSnapshot, getEventsSnapshot, replaceEvent, setEventStatus, subscribeEvents, updateEvents, type EventItem } from "../events-store";
 import { partnerOffices } from "../gov-offices";
 import { getOfficesServerSnapshot, getOfficesSnapshot, subscribeOffices } from "../offices-store";
@@ -383,14 +385,6 @@ function HelpCenter({ onNotify }: { onNotify: (message: string) => void }) {
   return <section className="full-section"><div className="section-intro"><div><span className="eyebrow">সহায়তা কেন্দ্র</span><h2>পাবলিক বোর্ড থেকে আসা সহায়তা অনুরোধ</h2><p>জনসাধারণের &ldquo;বার্তা প্রেরণ&rdquo; থেকে পাঠানো সংযোগ সমস্যার বার্তা এখানে দেখুন ও সমাধান পাঠান। কন্ট্রোল রুম হটলাইন: ০২-৫৫০০৬৯৭৮</p></div></div><div className="coverage-summary"><div><b>{toBn(messages.length)}</b><span>মোট বার্তা</span></div><div><b>{toBn(openCount)}</b><span>সমাধান প্রয়োজন</span></div><div><b>{toBn(messages.length - openCount)}</b><span>সমাধান হয়েছে</span></div></div>{messages.length === 0 ? <p className="empty-state">এখনো কোনো সহায়তা বার্তা আসেনি।</p> : <div className="support-list">{messages.map((message) => <div className="panel support-card" key={message.id}><div className="support-card-top"><div><b>{message.name}</b><small>{message.office} · {formatSupportTime(message.submittedAt)}</small></div><span className={`status-pill ${message.status === "open" ? "warning" : "live"}`}>{message.status === "open" ? "সমাধান প্রয়োজন" : "সমাধান হয়েছে"}</span></div><p className="support-message">{message.message}</p>{message.status === "resolved" ? <div className="support-reply"><b>পাঠানো সমাধান:</b> {message.reply}</div> : <div className="support-reply-form"><textarea value={replyDrafts[message.id] ?? ""} onChange={(event) => setReplyDrafts({ ...replyDrafts, [message.id]: event.target.value })} placeholder="সমাধান লিখুন..." rows={2} /><button className="primary small" onClick={() => sendSolution(message)}>সমাধান পাঠান</button></div>}</div>)}</div>}</section>;
 }
 
-type ReportRow = { title: string; date: string; owner: string; endpoints: string; success: string; status: string; tone: string; duration: string; note: string };
-const reportRows: ReportRow[] = [
-  { title: "জেলা প্রশাসক সমন্বয় সভা", date: "১২ সেপ্টেম্বর ২০২৬", owner: "মন্ত্রিপরিষদ বিভাগ", endpoints: "৬৪", success: "৯৮.৪%", status: "সম্পন্ন", tone: "live", duration: "৪৫ মিনিট", note: "১টি প্রান্তে সাময়িক সংযোগ দুর্বলতা দেখা গিয়েছিল, ৩ মিনিটের মধ্যে সমাধান হয়েছে।" },
-  { title: "ডিজিটাল সেবা পর্যালোচনা", date: "১১ সেপ্টেম্বর ২০২৬", owner: "আইসিটি বিভাগ", endpoints: "৩২", success: "১০০%", status: "সম্পন্ন", tone: "done", duration: "৩৮ মিনিট", note: "সব প্রান্ত সমস্যা ছাড়াই সংযুক্ত ছিল।" },
-  { title: "উপজেলা নির্বাহী অফিসার ব্রিফিং", date: "১০ সেপ্টেম্বর ২০২৬", owner: "জনপ্রশাসন মন্ত্রণালয়", endpoints: "৪৯", success: "৯৬.১%", status: "সম্পন্ন", tone: "done", duration: "৫২ মিনিট", note: "২টি উপজেলা প্রান্ত দেরিতে যুক্ত হয়েছিল, বাকি সবগুলো সময়মতো সংযুক্ত হয়েছে।" },
-  { title: "স্মার্ট বাংলাদেশ টাস্কফোর্স", date: "০৮ সেপ্টেম্বর ২০২৬", owner: "বাংলাদেশ কম্পিউটার কাউন্সিল", endpoints: "১৮", success: "৮৮.৯%", status: "সতর্কতা", tone: "warning", duration: "৪১ মিনিট", note: "২টি প্রান্তে বারবার সংযোগ বিচ্ছিন্ন হয়েছে, নেটওয়ার্ক টিমকে জানানো হয়েছে।" },
-];
-
 function downloadTextFile(filename: string, content: string, mime: string) {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -403,43 +397,81 @@ function downloadTextFile(filename: string, content: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
+const formatMoment = (ms: number) => new Date(ms).toLocaleString("bn-BD", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
 function reportsToCsv(rows: ReportRow[]) {
   const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
-  const header = ["সেশনের নাম", "তারিখ", "আয়োজক", "প্রান্ত", "সাফল্য", "অবস্থা", "স্থিতিকাল"].map(escape).join(",");
-  const lines = rows.map((row) => [row.title, row.date, row.owner, row.endpoints, row.success, row.status, row.duration].map(escape).join(","));
+  const header = ["সেশনের নাম", "তারিখ", "আয়োজক", "সহযোগী", "সংযুক্ত / আমন্ত্রিত প্রান্ত", "সাফল্য", "মোট সংযোগ সময়", "গড় সংযোগ সময়", "অবস্থা"].map(escape).join(",");
+  const lines = rows.map((row) => [row.title, row.date, row.owner, row.partner, row.endpoints, row.success, row.duration, row.avgDuration, row.status].map(escape).join(","));
   return [header, ...lines].join("\r\n");
 }
 
-function printReports(rows: ReportRow[], onNotify: (message: string) => void) {
+function connectionsToCsv(row: ReportRow) {
+  const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
+  const header = ["অফিস", "নাম", "যোগদান", "বিচ্ছিন্ন", "সময়"].map(escape).join(",");
+  const lines = row.connections.map((connection) => [connection.office, connection.name, formatMoment(connection.joinedAt), connection.leftAt ? formatMoment(connection.leftAt) : "সংযুক্ত আছে", connection.durationSec === null ? "চলমান" : formatDuration(connection.durationSec)].map(escape).join(","));
+  return [header, ...lines].join("\r\n");
+}
+
+// Report data includes names typed on the public pages, so escape everything written into the print window
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] ?? char);
+const PRINT_STYLE = "body{font-family:'Hind Siliguri',sans-serif;padding:28px;color:#193038}h1{font-size:20px;margin-bottom:4px}h2{font-size:17px;margin:18px 0 0}h3{font-size:15px;margin:20px 0 0}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #ccc;padding:8px 10px;text-align:left;font-size:13px}th{background:#f4f8f7}.note{margin-top:18px;font-size:13px;line-height:1.6}";
+
+function openPrintWindow(title: string, body: string, onNotify: (message: string) => void) {
   const printWindow = window.open("", "_blank", "width=900,height=700");
   if (!printWindow) { onNotify("পপ-আপ ব্লক করা হয়েছে — ব্রাউজার সেটিংসে পপ-আপ অনুমতি দিন"); return; }
-  const tableRows = rows.map((row) => `<tr><td>${row.title}</td><td>${row.date}</td><td>${row.owner}</td><td>${row.endpoints}</td><td>${row.success}</td><td>${row.status}</td></tr>`).join("");
-  printWindow.document.write(`<!DOCTYPE html><html lang="bn"><head><meta charSet="utf-8" /><title>অপারেশন রিপোর্ট</title><style>body{font-family:'Hind Siliguri',sans-serif;padding:28px;color:#193038}h1{font-size:20px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #ccc;padding:8px 10px;text-align:left;font-size:13px}th{background:#f4f8f7}</style></head><body><h1>বিসিসি ভিডিও কনফারেন্সিং — অপারেশন রিপোর্ট</h1><p>রপ্তানি সময়: ${new Date().toLocaleString("bn-BD")}</p><table><thead><tr><th>সেশনের নাম</th><th>তারিখ</th><th>আয়োজক</th><th>প্রান্ত</th><th>সাফল্য</th><th>অবস্থা</th></tr></thead><tbody>${tableRows}</tbody></table></body></html>`);
+  printWindow.document.write(`<!DOCTYPE html><html lang="bn"><head><meta charSet="utf-8" /><title>${escapeHtml(title)}</title><style>${PRINT_STYLE}</style></head><body>${body}</body></html>`);
   printWindow.document.close();
   printWindow.focus();
   window.setTimeout(() => printWindow.print(), 300);
+}
+
+function printReports(rows: ReportRow[], summary: ReportSummary, onNotify: (message: string) => void) {
+  const tableRows = rows.map((row) => `<tr>${[row.title, row.date, row.owner, row.endpoints, row.success, row.duration, row.status].map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("");
+  openPrintWindow("অপারেশন রিপোর্ট", `<h1>বিসিসি ভিডিও কনফারেন্সিং — অপারেশন রিপোর্ট</h1><p>রপ্তানি সময়: ${new Date().toLocaleString("bn-BD")}</p><p>মোট সেশন: ${escapeHtml(summary.totalSessions)} · গড় সংযোগ সাফল্য: ${escapeHtml(summary.avgSuccess)} · অংশগ্রহণকারী প্রান্ত: ${escapeHtml(summary.participants)} · গড় সংযোগ সময়: ${escapeHtml(summary.avgDuration)}</p><table><thead><tr><th>সেশনের নাম</th><th>তারিখ</th><th>আয়োজক</th><th>সংযুক্ত / আমন্ত্রিত</th><th>সাফল্য</th><th>মোট সংযোগ সময়</th><th>অবস্থা</th></tr></thead><tbody>${tableRows}</tbody></table>`, onNotify);
 }
 
 function printReportDetail(row: ReportRow, onNotify: (message: string) => void) {
-  const printWindow = window.open("", "_blank", "width=900,height=700");
-  if (!printWindow) { onNotify("পপ-আপ ব্লক করা হয়েছে — ব্রাউজার সেটিংসে পপ-আপ অনুমতি দিন"); return; }
-  const fields = [["আয়োজক", row.owner], ["তারিখ", row.date], ["প্রান্ত", row.endpoints], ["সাফল্য", row.success], ["স্থিতিকাল", row.duration], ["অবস্থা", row.status]];
-  const fieldRows = fields.map(([label, value]) => `<tr><th>${label}</th><td>${value}</td></tr>`).join("");
-  printWindow.document.write(`<!DOCTYPE html><html lang="bn"><head><meta charSet="utf-8" /><title>${row.title} — রিপোর্ট</title><style>body{font-family:'Hind Siliguri',sans-serif;padding:28px;color:#193038}h1{font-size:20px;margin-bottom:4px}h2{font-size:17px;margin:18px 0 0}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #ccc;padding:8px 10px;text-align:left;font-size:13px}th{background:#f4f8f7;width:30%}.note{margin-top:18px;font-size:13px;line-height:1.6}</style></head><body><h1>বিসিসি ভিডিও কনফারেন্সিং — সেশন রিপোর্ট</h1><p>রপ্তানি সময়: ${new Date().toLocaleString("bn-BD")}</p><h2>${row.title}</h2><table><tbody>${fieldRows}</tbody></table><p class="note"><b>মন্তব্য:</b> ${row.note}</p></body></html>`);
-  printWindow.document.close();
-  printWindow.focus();
-  window.setTimeout(() => printWindow.print(), 300);
+  const fields = [["আয়োজক", row.owner], ["সহযোগী", row.partner || "—"], ["তারিখ", row.date], ["সংযুক্ত / আমন্ত্রিত প্রান্ত", row.endpoints], ["সাফল্য", row.success], ["মোট সংযোগ সময়", row.duration], ["গড় সংযোগ সময়", row.avgDuration], ["অবস্থা", row.status]];
+  const fieldRows = fields.map(([label, value]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`).join("");
+  const connectionRows = row.connections.map((connection) => `<tr>${[connection.office, connection.name || "—", formatMoment(connection.joinedAt), connection.leftAt ? formatMoment(connection.leftAt) : "সংযুক্ত আছে", connection.durationSec === null ? "চলমান" : formatDuration(connection.durationSec)].map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("");
+  const connectionTable = row.connections.length ? `<h3>সংযোগের বিবরণ</h3><table><thead><tr><th>অফিস</th><th>নাম</th><th>যোগদান</th><th>বিচ্ছিন্ন</th><th>সময়</th></tr></thead><tbody>${connectionRows}</tbody></table>` : "";
+  openPrintWindow(`${row.title} — রিপোর্ট`, `<h1>বিসিসি ভিডিও কনফারেন্সিং — সেশন রিপোর্ট</h1><p>রপ্তানি সময়: ${new Date().toLocaleString("bn-BD")}</p><h2>${escapeHtml(row.title)}</h2><table><tbody>${fieldRows}</tbody></table><p class="note"><b>মন্তব্য:</b> ${escapeHtml(row.note)}</p>${connectionTable}`, onNotify);
 }
 
 function Reports({ onNotify }: { onNotify: (message: string) => void }) {
+  const report = useSyncExternalStore(subscribeReport, getReportSnapshot, getReportServerSnapshot);
   const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
-  const [detailsReport, setDetailsReport] = useState<ReportRow | null>(null);
+  const [detailsTitle, setDetailsTitle] = useState<string | null>(null);
+  // Follow live updates while the details window is open
+  const detailsReport = detailsTitle === null ? undefined : report.rows.find((row) => row.title === detailsTitle);
+  const loaded = report.generatedAt > 0;
 
-  const downloadAllCsv = () => { downloadTextFile("bccvc-report.csv", reportsToCsv(reportRows), "text/csv;charset=utf-8"); onNotify("CSV ফাইল ডাউনলোড হয়েছে"); };
-  const downloadAllJson = () => { downloadTextFile("bccvc-report.json", JSON.stringify(reportRows, null, 2), "application/json"); onNotify("JSON ফাইল ডাউনলোড হয়েছে"); };
-  const downloadAllPdf = () => { printReports(reportRows, onNotify); };
+  const downloadAllCsv = () => { downloadTextFile("bccvc-report.csv", reportsToCsv(report.rows), "text/csv;charset=utf-8"); onNotify("CSV ফাইল ডাউনলোড হয়েছে"); };
+  const downloadAllJson = () => { downloadTextFile("bccvc-report.json", JSON.stringify(report, null, 2), "application/json"); onNotify("JSON ফাইল ডাউনলোড হয়েছে"); };
+  const downloadAllPdf = () => { printReports(report.rows, report.summary, onNotify); };
+  const close = async (id: string) => { onNotify(await closeConnection(id) ? "সংযোগটি বন্ধ করা হয়েছে" : "সংযোগ বন্ধ করা যায়নি"); };
 
-  return <section className="full-section"><div className="section-intro"><div><span className="eyebrow">অপারেশন অ্যানালিটিক্স</span><h2>সংযোগ ও সভার রিপোর্ট</h2><p>ভিডিও কনফারেন্সিং প্রান্ত, সেশন সাফল্য এবং সংযোগ পরীক্ষার সারসংক্ষেপ দেখুন।</p></div><div className="download-menu-wrap"><button className="secondary" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>↓ রিপোর্ট ডাউনলোড</button>{downloadMenuOpen && <><div className="menu-backdrop" role="presentation" onClick={() => setDownloadMenuOpen(false)} /><div className="download-menu"><button onClick={() => { downloadAllCsv(); setDownloadMenuOpen(false); }}>CSV (.csv)</button><button onClick={() => { downloadAllJson(); setDownloadMenuOpen(false); }}>JSON (.json)</button><button onClick={() => { downloadAllPdf(); setDownloadMenuOpen(false); }}>প্রিন্ট / PDF</button></div></>}</div></div><div className="coverage-summary report-stats"><div><b>৮৬</b><span>এই মাসে মোট সেশন</span></div><div><b>৯৬.৮%</b><span>গড় সংযোগ সাফল্য</span></div><div><b>১,৪৮৬</b><span>অংশগ্রহণকারী প্রান্ত</span></div><div><b>১৪ মি.</b><span>গড় সমস্যা সমাধান</span></div></div><div className="panel directory-panel"><div className="directory-tools"><div><h3>সাম্প্রতিক সেশন রিপোর্ট</h3><span className="report-subtitle">সর্বশেষ ৩০ দিনের কার্যক্রম</span></div><button className="filter-button">সময়কাল: ৩০ দিন ˅</button><button className="filter-button" onClick={downloadAllCsv}>CSV ↓</button></div><div className="directory-head"><span>সেশনের নাম</span><span>তারিখ</span><span>প্রান্ত</span><span>সাফল্য</span><span>অবস্থা</span><span /></div>{reportRows.map((row) => <div className="directory-row" key={row.title}><b>{row.title}</b><span>{row.date}</span><span>{row.endpoints}</span><span className={row.tone === "warning" ? "report-warning" : "report-good"}>{row.success}</span><span className={`report-status ${row.tone}`}>{row.status}</span><button onClick={() => setDetailsReport(row)}>বিস্তারিত →</button></div>)}</div>{detailsReport && <div className="modal-backdrop" role="presentation" onClick={() => setDetailsReport(null)}><div className="modal" role="dialog" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setDetailsReport(null)}>×</button><span className="eyebrow">রিপোর্ট বিস্তারিত</span><h2>{detailsReport.title}</h2><p>{detailsReport.owner} · {detailsReport.date}</p><div className="report-detail-grid"><div><span>প্রান্ত</span><b>{detailsReport.endpoints}</b></div><div><span>সাফল্য</span><b className={detailsReport.tone === "warning" ? "report-warning" : "report-good"}>{detailsReport.success}</b></div><div><span>স্থিতিকাল</span><b>{detailsReport.duration}</b></div><div><span>অবস্থা</span><span className={`report-status ${detailsReport.tone}`}>{detailsReport.status}</span></div></div><p className="report-detail-note"><b>মন্তব্য:</b> {detailsReport.note}</p><button className="secondary wide" onClick={() => printReportDetail(detailsReport, onNotify)}>↓ শুধু এই রিপোর্ট PDF ডাউনলোড করুন</button></div></div>}</section>;
+  return <section className="full-section">
+    <div className="section-intro"><div><span className="eyebrow">অপারেশন অ্যানালিটিক্স · লাইভ ডেটা</span><h2>সংযোগ ও সভার রিপোর্ট</h2><p>প্রতিটি সভায় কোন প্রান্ত কখন WebRTC লিংকে যুক্ত হয়েছে, কতক্ষণ সংযুক্ত ছিল এবং সংযোগ সাফল্যের হার দেখুন।</p></div><div className="download-menu-wrap"><button className="secondary" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)} disabled={!loaded}>↓ রিপোর্ট ডাউনলোড</button>{downloadMenuOpen && <><div className="menu-backdrop" role="presentation" onClick={() => setDownloadMenuOpen(false)} /><div className="download-menu"><button onClick={() => { downloadAllCsv(); setDownloadMenuOpen(false); }}>CSV (.csv)</button><button onClick={() => { downloadAllJson(); setDownloadMenuOpen(false); }}>JSON (.json)</button><button onClick={() => { downloadAllPdf(); setDownloadMenuOpen(false); }}>প্রিন্ট / PDF</button></div></>}</div></div>
+    <div className="coverage-summary report-stats"><div><b>{report.summary.totalSessions}</b><span>মোট সেশন</span></div><div><b>{report.summary.avgSuccess}</b><span>গড় সংযোগ সাফল্য</span></div><div><b>{report.summary.participants}</b><span>অংশগ্রহণকারী প্রান্ত</span></div><div><b>{report.summary.avgDuration}</b><span>গড় সংযোগ সময়</span></div></div>
+    <div className="panel directory-panel">
+      <div className="directory-tools"><div><h3>সেশন রিপোর্ট</h3><span className="report-subtitle">{loaded ? <>লাইভ · প্রতি ৫ সেকেন্ডে হালনাগাদ · এখন সংযুক্ত: {report.summary.activeNow}টি প্রান্ত</> : "লোড হচ্ছে..."}</span></div><button className="filter-button" onClick={downloadAllCsv} disabled={!loaded}>CSV ↓</button></div>
+      <div className="directory-head"><span>সেশনের নাম</span><span>সংযুক্ত / আমন্ত্রিত</span><span>সাফল্য</span><span>মোট সংযোগ সময়</span><span>অবস্থা</span><span /></div>
+      {loaded && report.rows.length === 0 && <p className="empty-state">এখনো কোনো সভা তৈরি হয়নি।</p>}
+      {report.rows.map((row) => <div className="directory-row" key={row.title}><div className="report-name"><b>{row.title}</b><small>{row.date}</small></div><span>{row.endpoints}{row.activeNow > 0 && <em className="report-live-count"> · {toBn(row.activeNow)} সংযুক্ত</em>}</span><span className={row.tone === "warning" ? "report-warning" : "report-good"}>{row.success}</span><span>{row.duration}</span><span className={`report-status ${row.tone}`}>{row.status}</span><button onClick={() => setDetailsTitle(row.title)}>বিস্তারিত →</button></div>)}
+    </div>
+    {detailsReport && <div className="modal-backdrop" role="presentation" onClick={() => setDetailsTitle(null)}><div className="modal report-details-modal" role="dialog" onClick={(event) => event.stopPropagation()}>
+      <button className="modal-close" onClick={() => setDetailsTitle(null)}>×</button>
+      <span className="eyebrow">রিপোর্ট বিস্তারিত · লাইভ</span>
+      <h2>{detailsReport.title}</h2>
+      <p>{detailsReport.owner}{detailsReport.partner && <> · সহযোগী: {detailsReport.partner}</>} · {detailsReport.date}</p>
+      <div className="report-detail-grid"><div><span>সংযুক্ত / আমন্ত্রিত</span><b>{detailsReport.endpoints}</b></div><div><span>সাফল্য</span><b className={detailsReport.tone === "warning" ? "report-warning" : "report-good"}>{detailsReport.success}</b></div><div><span>মোট সংযোগ সময়</span><b>{detailsReport.duration}</b></div><div><span>গড় সংযোগ সময়</span><b>{detailsReport.avgDuration}</b></div></div>
+      <p className="report-detail-note"><b>মন্তব্য:</b> {detailsReport.note}</p>
+      {detailsReport.connections.length > 0 && <div className="connection-log"><h3>সংযোগের বিবরণ</h3>{detailsReport.connections.map((connection) => <div className="connection-row" key={connection.id}><div><b>{connection.office}</b><small>{connection.name || "নাম দেওয়া হয়নি"}</small></div><div className="connection-times"><span>যোগদান: {formatMoment(connection.joinedAt)}</span><span>{connection.leftAt ? <>বিচ্ছিন্ন: {formatMoment(connection.leftAt)}</> : <em className="connection-open">● সংযুক্ত আছে</em>}</span></div><b className="connection-duration">{connection.durationSec === null ? formatDuration((report.generatedAt - connection.joinedAt) / 1000) : formatDuration(connection.durationSec)}</b>{connection.leftAt === null && <button className="text-button danger" onClick={() => close(connection.id)}>বন্ধ করুন</button>}</div>)}</div>}
+      <div className="event-detail-actions"><button className="secondary" onClick={() => printReportDetail(detailsReport, onNotify)}>↓ এই রিপোর্ট PDF</button>{detailsReport.connections.length > 0 && <button className="secondary" onClick={() => { downloadTextFile(`${detailsReport.title}-connections.csv`, connectionsToCsv(detailsReport), "text/csv;charset=utf-8"); onNotify("সংযোগের CSV ডাউনলোড হয়েছে"); }}>↓ সংযোগ CSV</button>}</div>
+    </div></div>}
+  </section>;
 }
 
 function Settings({ onNotify }: { onNotify: (message: string) => void }) {
